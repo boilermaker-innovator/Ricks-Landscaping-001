@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rick's Landscaping — iTabs Business Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root {
+  --earth: #1E2A14;
+  --forest: #2C3A1E;
+  --moss: #4A6741;
+  --sage: #7A9E6F;
+  --bright: #7DC44E;
+  --cream: #F4EFE6;
+  --warm: #E6DDC8;
+  --gold: #C8A855;
+  --ink: #0F1A08;
+  --muted: #6A8A5A;
+  --border: rgba(74,103,65,0.18);
+  --surface: #fff;
+  --on-site: #7DC44E;
+  --transit: #E8A030;
+  --not-started: #C8A855;
+  --done: #4A8FB5;
+  --red: #D05A3A;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ══ APP SHELL ══ */
+.app-bar{
+  background:var(--earth);
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 20px;
+  flex-shrink:0;
+  border-bottom:2px solid var(--gold);
+  z-index:200;
+}
+.app-logo{
+  font-family:'Playfair Display',serif;
+  font-size:17px;
+  font-weight:900;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.logo-pulse{
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--bright);
+  box-shadow:0 0 8px var(--bright);
+  animation:pulse 2s ease infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.85);}}
+.app-time{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,.35);}
+.ai-header-btn{background:rgba(74,103,65,.5);border:1.5px solid rgba(125,196,78,.3);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;transition:all .2s;flex-shrink:0;position:relative;}
+.ai-header-btn:active{background:rgba(74,103,65,.8);}
+.ai-header-btn .ai-notif{position:absolute;top:-3px;right:-3px;width:10px;height:10px;background:var(--bright);border-radius:50%;border:2px solid var(--earth);display:none;}
+.ai-header-btn.has-chat .ai-notif{display:block;}
+
+/* ══ BOTTOM NAV ══ */
+.bottom-nav{
+  background:var(--earth);
+  border-top:1px solid rgba(255,255,255,.08);
+  display:flex;
+  flex-shrink:0;
+  z-index:200;
+}
+.nav-item{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:10px 4px 8px;
+  cursor:pointer;
+  border-top:2px solid transparent;
+  transition:all .2s;
+  gap:3px;
+}
+.nav-item.active{border-top-color:var(--gold);background:rgba(200,168,85,.06);}
+.nav-icon{font-size:20px;line-height:1;}
+.nav-label{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:rgba(255,255,255,.35);transition:color .2s;}
+.nav-item.active .nav-label{color:var(--gold);}
+
+/* ══ PAGES ══ */
+.pages{flex:1;overflow:hidden;position:relative;}
+.page{
+  position:absolute;
+  inset:0;
+  overflow-y:auto;
+  display:none;
+  background:var(--cream);
+}
+.page.active{display:block;}
+.page::-webkit-scrollbar{width:4px;}
+.page::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+
+/* ══ SHARED COMPONENTS ══ */
+.page-header{
+  background:var(--forest);
+  padding:20px 20px 16px;
+  position:sticky;
+  top:0;
+  z-index:50;
+}
+.page-header h1{
+  font-family:'Playfair Display',serif;
+  font-size:22px;
+  font-weight:900;
+  color:#fff;
+  line-height:1.1;
+}
+.page-header p{font-size:12px;color:rgba(255,255,255,.45);margin-top:3px;}
+.page-body{padding:16px;}
+
+.card{background:#fff;border:1.5px solid var(--border);border-radius:8px;padding:18px;margin-bottom:14px;}
+.card-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;color:var(--forest);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--moss);margin-bottom:4px;}
+.field input,.field select,.field textarea{
+  width:100%;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  padding:10px 12px;
+  border:1.5px solid var(--border);
+  border-radius:4px;
+  background:#fff;
+  color:var(--ink);
+  transition:border-color .2s;
+}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--moss);}
+.field textarea{resize:vertical;min-height:70px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+.btn{
+  font-family:'Syne',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.5px;
+  padding:12px 20px;
+  border-radius:4px;
+  border:none;
+  cursor:pointer;
+  transition:all .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+}
+.btn-green{background:var(--moss);color:#fff;}
+.btn-green:hover{background:var(--forest);}
+.btn-gold{background:var(--gold);color:var(--earth);}
+.btn-gold:hover{background:#d9ba6a;}
+.btn-outline{background:transparent;color:var(--moss);border:1.5px solid var(--moss);}
+.btn-dark{background:var(--earth);color:#fff;}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+
+.badge{
+  display:inline-block;
+  font-size:9px;
+  font-weight:700;
+  letter-spacing:1.5px;
+  text-transform:uppercase;
+  padding:3px 8px;
+  border-radius:20px;
+}
+.badge-green{background:rgba(125,196,78,.15);color:var(--on-site);}
+.badge-amber{background:rgba(232,160,48,.15);color:var(--transit);}
+.badge-gold{background:rgba(200,168,85,.15);color:var(--gold);}
+.badge-blue{background:rgba(74,143,181,.15);color:var(--done);}
+
+/* ══ HOME ══ */
+.home-hero{
+  background:var(--earth);
+  padding:28px 20px 24px;
+  position:relative;
+  overflow:hidden;
+}
+.home-hero::before{
+  content:'';
+  position:absolute;
+  bottom:-60px;right:-60px;
+  width:200px;height:200px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(125,196,78,.1) 0%,transparent 70%);
+}
+.home-hero h2{
+  font-family:'Playfair Display',serif;
+  font-size:28px;
+  font-weight:900;
+  color:#fff;
+  line-height:1.1;
+  margin-bottom:4px;
+}
+.home-hero h2 em{font-style:italic;color:var(--sage);}
+.home-hero p{font-size:13px;color:rgba(255,255,255,.45);margin-bottom:18px;}
+
+.stats-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;}
+.stat-tile{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:6px;
+  padding:12px 16px;
+  min-width:90px;
+  flex-shrink:0;
+  text-align:center;
+}
+.stat-num{
+  font-family:'Syne',sans-serif;
+  font-size:24px;
+  font-weight:800;
+  line-height:1;
+  margin-bottom:3px;
+}
+.stat-lbl{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.35);}
+
+.tool-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px;}
+.tool-tile{
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  padding:18px 14px;
+  cursor:pointer;
+  transition:all .2s;
+  text-align:center;
+  position:relative;
+  overflow:hidden;
+}
+.tool-tile::after{
+  content:'';
+  position:absolute;
+  bottom:0;left:0;right:0;
+  height:3px;
+  background:var(--moss);
+  transform:scaleX(0);
+  transition:transform .25s;
+  transform-origin:left;
+}
+.tool-tile:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(44,58,30,.1);}
+.tool-tile:hover::after{transform:scaleX(1);}
+.tool-tile .ti{font-size:32px;margin-bottom:8px;display:block;}
+.tool-tile h3{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--forest);margin-bottom:4px;}
+.tool-tile p{font-size:11px;color:var(--muted);line-height:1.4;}
+
+/* ══ QUOTE WIDGET ══ */
+.price-display{
+  background:var(--earth);
+  border-radius:6px;
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:12px 0;
+}
+.price-display .pd-label{font-size:10px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;}
+.price-display .pd-range{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gold);}
+
+.success-box{text-align:center;padding:24px 16px;display:none;}
+.success-box .sbi{font-size:48px;margin-bottom:10px;}
+.success-box h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--forest);margin-bottom:6px;}
+.success-box p{font-size:13px;color:var(--muted);}
+
+/* ══ PLAN ══ */
+.plan-wrap{background:#fff;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.plan-wrap svg{width:100%;height:auto;display:block;}
+.plan-label{font-size:10px;color:var(--muted);text-align:center;padding:8px;letter-spacing:1px;text-transform:uppercase;}
+.legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;color:#555;}
+.legend-swatch{width:20px;height:14px;border-radius:2px;border:1px solid rgba(0,0,0,.1);flex-shrink:0;}
+
+/* ══ BRIEFS ══ */
+.trade-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.trade-chip{
+  padding:8px 14px;
+  border-radius:20px;
+  border:1.5px solid var(--border);
+  background:#fff;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  cursor:pointer;
+  transition:all .15s;
+  display:flex;
+  align-items:center;
+  gap:5px;
+}
+.trade-chip.on{border-color:var(--moss);background:rgba(74,103,65,.07);color:var(--forest);}
+
+.brief-card{background:#fff;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px;display:none;}
+.brief-card.visible{display:block;}
+.brief-card-header{background:var(--earth);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.brief-card-header h3{font-family:'Playfair Display',serif;font-size:15px;color:#fff;}
+.brief-card-body{padding:14px 16px;}
+.scope-item{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.04);font-size:12px;line-height:1.5;align-items:flex-start;}
+.scope-item::before{content:'→';color:var(--moss);font-weight:700;flex-shrink:0;margin-top:1px;}
+.scope-item:last-child{border-bottom:none;}
+
+/* ══ TRACKER ══ */
+.tracker-layout{display:flex;height:calc(100vh - 56px - 58px);overflow:hidden;}
+.tracker-list{width:100%;overflow-y:auto;background:var(--cream);}
+.map-view{display:none;flex:1;}
+#tracker-map{width:100%;height:100%;}
+.leaflet-tile{filter:sepia(.3) saturate(.8);}
+
+.toggle-view-btn{
+  position:fixed;
+  bottom:74px;
+  right:16px;
+  background:var(--earth);
+  color:#fff;
+  border:2px solid var(--gold);
+  border-radius:24px;
+  padding:10px 18px;
+  font-family:'Syne',sans-serif;
+  font-size:12px;
+  font-weight:700;
+  cursor:pointer;
+  z-index:150;
+  box-shadow:0 4px 16px rgba(0,0,0,.3);
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.job-row{
+  background:#fff;
+  border-left:3px solid transparent;
+  border-bottom:1px solid var(--border);
+  padding:14px 16px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.job-row:hover{background:rgba(74,103,65,.03);}
+.job-row.s-on-site{border-left-color:var(--on-site);}
+.job-row.s-transit{border-left-color:var(--transit);}
+.job-row.s-not-started{border-left-color:var(--not-started);}
+.job-row.s-done{border-left-color:var(--done);}
+.jr-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
+.jr-addr{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--forest);}
+.jr-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.jr-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;}
+.jr-chip{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--border);color:var(--muted);}
+.jr-chip.active{border-color:rgba(125,196,78,.4);color:var(--on-site);background:rgba(125,196,78,.06);}
+.jr-foot{display:flex;justify-content:space-between;}
+.jr-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.jr-ref{font-family:'DM Mono',monospace;font-size:9px;color:rgba(106,138,90,.4);}
+
+.tracker-stats{
+  display:flex;
+  background:var(--earth);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.ts-item{flex:1;text-align:center;padding:10px 4px;}
+.ts-num{font-family:'Syne',sans-serif;font-size:16px;font-weight:800;}
+.ts-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.3);}
+
+/* ══ CHECKIN ══ */
+.ci-site-banner{
+  background:linear-gradient(135deg,var(--forest) 0%,var(--earth) 100%);
+  padding:20px;
+  border-radius:8px;
+  margin-bottom:14px;
+}
+.ci-site-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--bright);margin-bottom:4px;}
+.ci-site-addr{font-family:'Playfair Display',serif;font-size:20px;font-weight:900;color:#fff;}
+.ci-site-sub{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;}
+
+.contractor-btn{
+  width:100%;
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  padding:14px 16px;
+  margin-bottom:8px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  text-align:left;
+  transition:all .18s;
+}
+.contractor-btn:hover{border-color:var(--sage);background:rgba(74,103,65,.03);}
+.contractor-btn.on-site{border-color:rgba(125,196,78,.5);background:rgba(125,196,78,.04);}
+.cb-ico{width:40px;height:40px;border-radius:8px;background:rgba(74,103,65,.08);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.cb-name{font-size:14px;font-weight:600;color:var(--forest);}
+.cb-trade{font-size:11px;color:var(--muted);}
+
+.ci-action{
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  padding:20px;
+  text-align:center;
+  display:none;
+}
+.ci-action.visible{display:block;}
+.cia-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--forest);margin-bottom:4px;}
+.cia-time{font-family:'DM Mono',monospace;font-size:28px;font-weight:500;color:var(--moss);margin:12px 0;}
+.cia-btns{display:flex;gap:10px;margin-top:16px;}
+.cia-btn{flex:1;padding:14px;border-radius:6px;border:none;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;}
+.cia-btn:active{transform:scale(.97);}
+.btn-checkin-ci{background:#5A9A3A;color:#fff;}
+.btn-checkout-ci{background:#4A8FB5;color:#fff;}
+.btn-back-ci{background:transparent;color:var(--muted);border:1.5px solid var(--border);font-size:12px;}
+
+.ci-success{
+  background:var(--forest);
+  border-radius:8px;
+  padding:24px 20px;
+  text-align:center;
+  color:#fff;
+  display:none;
+  animation:fadeUp .4s ease;
+}
+.ci-success.visible{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.cis-icon{font-size:48px;margin-bottom:10px;}
+.cis-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;margin-bottom:6px;}
+.cis-time{font-family:'DM Mono',monospace;font-size:28px;color:var(--gold);margin:8px 0;}
+.cis-detail{font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;}
+
+/* ══ QR PAGE ══ */
+.qr-card{
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:8px;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+.qr-card-top{
+  background:var(--earth);
+  padding:12px 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.qrc-addr{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:#fff;}
+.qrc-ref{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);}
+.qrc-body{padding:16px;text-align:center;}
+.qrc-body img{width:160px;height:160px;border:2px solid #f0f0f0;border-radius:6px;margin:0 auto 10px;display:block;}
+.qrc-hint{font-size:12px;color:var(--muted);}
+.qrc-foot{
+  background:rgba(74,103,65,.05);
+  border-top:1px solid var(--border);
+  padding:8px 16px;
+  font-size:10px;
+  color:var(--muted);
+  font-family:'DM Mono',monospace;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* ══ PRINT ══ */
+/* ══ PHOTOS ══ */
+.photo-upload-zone{border:2px dashed rgba(74,103,65,.35);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;background:rgba(74,103,65,.04);transition:all .2s;margin-bottom:16px;}
+.photo-upload-zone:active{background:rgba(74,103,65,.1);}
+.photo-upload-zone .pu-icon{font-size:36px;margin-bottom:8px;}
+.photo-upload-zone p{font-size:13px;color:var(--muted);margin-bottom:4px;}
+.photo-upload-zone small{font-size:11px;color:rgba(106,138,90,.5);}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.photo-card{background:var(--surface);border-radius:8px;overflow:hidden;border:1px solid var(--border);position:relative;}
+.photo-card img{width:100%;height:120px;object-fit:cover;display:block;}
+.photo-card-body{padding:8px 10px;}
+.photo-card-cap{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.photo-card-meta{font-size:10px;color:var(--muted);}
+.photo-card-del{position:absolute;top:6px;right:6px;background:rgba(208,90,58,.85);border:none;border-radius:50%;width:22px;height:22px;color:#fff;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.photo-tabs{display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;padding-bottom:2px;}
+.photo-tab{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;color:var(--muted);font-family:'DM Sans',sans-serif;}
+.photo-tab.active{background:var(--moss);color:#fff;border-color:var(--moss);}
+.photo-empty{text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;}
+#photo-caption-input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;margin-bottom:10px;background:#fff;}
+.photo-lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:999;align-items:center;justify-content:center;flex-direction:column;}
+.photo-lightbox.open{display:flex;}
+.photo-lightbox img{max-width:95vw;max-height:75vh;border-radius:8px;object-fit:contain;}
+.photo-lightbox .lb-cap{color:#fff;margin-top:12px;font-size:14px;text-align:center;}
+.photo-lightbox .lb-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;border-radius:50%;width:36px;height:36px;color:#fff;font-size:18px;cursor:pointer;}
+
+/* ══ AI ASSISTANT ══ */
+.ai-chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 56px - 58px - 60px);min-height:300px;}
+.ai-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.ai-msg{max-width:88%;padding:12px 14px;border-radius:14px;font-size:13px;line-height:1.6;}
+.ai-msg.user{align-self:flex-end;background:var(--moss);color:#fff;border-radius:14px 14px 4px 14px;}
+.ai-msg.assistant{align-self:flex-start;background:var(--surface);color:var(--ink);border:1px solid var(--border);border-radius:14px 14px 14px 4px;}
+.ai-msg.assistant.loading{color:var(--muted);font-style:italic;}
+.ai-msg strong{font-weight:700;}
+.ai-msg ul{padding-left:16px;margin-top:4px;}
+.ai-msg li{margin-bottom:3px;}
+.ai-input-row{display:flex;gap:8px;padding:12px 16px;background:var(--cream);border-top:1px solid var(--border);flex-shrink:0;}
+.ai-input-row textarea{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;resize:none;height:42px;max-height:100px;overflow-y:auto;background:#fff;color:var(--ink);}
+.ai-send-btn{width:42px;height:42px;border-radius:10px;border:none;background:var(--moss);color:#fff;font-size:18px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:opacity .2s;}
+.ai-send-btn:disabled{opacity:.4;cursor:not-allowed;}
+.ai-chips{display:flex;gap:6px;flex-wrap:wrap;padding:8px 16px 0;flex-shrink:0;}
+.ai-chip{padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:transparent;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap;}
+.ai-chip:hover{border-color:var(--moss);color:var(--moss);}
+.ai-welcome{text-align:center;padding:24px 16px;color:var(--muted);}
+.ai-welcome .aw-icon{font-size:40px;margin-bottom:10px;}
+.ai-welcome h3{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.ai-welcome p{font-size:12px;line-height:1.6;}
+
+/* ══ API KEY SETUP ══ */
+.key-setup-overlay{display:none;position:fixed;inset:0;background:rgba(15,26,8,.95);z-index:500;align-items:center;justify-content:center;padding:24px;}
+.key-setup-overlay.open{display:flex;}
+.key-setup-card{background:var(--surface);border-radius:16px;padding:28px 20px;width:100%;max-width:400px;}
+.key-setup-card h2{font-family:'Playfair Display',serif;font-size:1.3rem;margin-bottom:6px;color:var(--ink);}
+.key-setup-card p{font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+.key-setup-card input{width:100%;padding:12px;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Mono',monospace;font-size:11px;margin-bottom:12px;background:#fff;color:var(--ink);}
+.key-setup-card .steps{background:rgba(74,103,65,.06);border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:11px;color:var(--muted);line-height:1.9;}
+.key-setup-card .steps a{color:var(--moss);font-weight:700;}
+
+@media print{
+  .app-bar,.bottom-nav,.toggle-view-btn{display:none!important;}
+  .pages{overflow:visible!important;height:auto!important;}
+  .page{position:static!important;display:block!important;overflow:visible!important;}
+  .page:not(.active){display:none!important;}
+}
+@media(max-width:400px){
+  .tool-grid{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- APP BAR -->
+<div class="app-bar">
+  <div class="app-logo">
+    <div class="logo-pulse"></div>
+    Rick's Landscaping
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="ai-header-btn" id="ai-header-btn" onclick="toggleAIDrawer()" title="Ask Trade Assistant">
+      💬
+      <div class="ai-notif"></div>
+    </div>
+    <div class="app-time" id="app-time">--:--</div>
+  </div>
+</div>
+
+<!-- AI DRAWER -->
+<div id="ai-drawer" style="display:none;position:fixed;top:56px;left:0;right:0;bottom:58px;background:var(--cream);z-index:150;flex-direction:column;">
+  <div style="background:var(--forest);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.08);">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">🤖</span>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;">Trade Assistant</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4);">Ask anything about your jobs</div>
+      </div>
+    </div>
+    <button onclick="toggleAIDrawer()" style="background:rgba(255,255,255,.1);border:none;border-radius:50%;width:30px;height:30px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+  </div>
+  <div class="ai-messages" id="ai-drawer-messages">
+    <div class="ai-welcome" id="ai-drawer-welcome">
+      <div class="aw-icon">🤖</div>
+      <h3>Hi Rick — what do you need?</h3>
+      <p>Ask me about your jobs, contractors, regs, specs — anything that comes up.</p>
+    </div>
+  </div>
+  <div class="ai-chips" id="ai-drawer-chips">
+    <button class="ai-chip" onclick="aiDrawerChip(this)">Who's on site now?</button>
+    <button class="ai-chip" onclick="aiDrawerChip(this)">Limestone wall height rules</button>
+    <button class="ai-chip" onclick="aiDrawerChip(this)">Pool fencing compliance Perth</button>
+    <button class="ai-chip" onclick="aiDrawerChip(this)">Drainage spec for pool area</button>
+  </div>
+  <div class="ai-input-row">
+    <textarea id="ai-drawer-input" placeholder="Ask anything…" rows="1" onkeydown="aiDrawerKeydown(event)" oninput="aiResize(this)"></textarea>
+    <button class="ai-send-btn" id="ai-drawer-send-btn" onclick="aiDrawerSend()">➤</button>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- ══ HOME ══ -->
+  <div class="page active" id="page-home">
+    <div class="home-hero">
+      <h2>Rick's<br><em>Business Hub</em></h2>
+      <p>All your tools in one place — powered by iTabs</p>
+      <div class="stats-row">
+        <div class="stat-tile">
+          <div class="stat-num" style="color:var(--bright)" id="h-onsite">3</div>
+          <div class="stat-lbl">On Site</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" style="color:var(--gold)" id="h-pending">2</div>
+          <div class="stat-lbl">Today</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" style="color:#fff" id="h-jobs">6</div>
+          <div class="stat-lbl">Active Jobs</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-num" style="color:rgba(255,255,255,.5)" id="h-ctrs">8</div>
+          <div class="stat-lbl">Contractors</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-grid">
+      <div class="tool-tile" onclick="goTo('quote')">
+        <span class="ti">💬</span>
+        <h3>Quick Quote</h3>
+        <p>Send clients a price guide instantly</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('plan')">
+        <span class="ti">🗺️</span>
+        <h3>Site Plan</h3>
+        <p>View & share the landscape design</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('briefs')">
+        <span class="ti">📋</span>
+        <h3>Contractor Briefs</h3>
+        <p>Generate scope of works per trade</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('tracker')">
+        <span class="ti">📍</span>
+        <h3>Job Tracker</h3>
+        <p>Who's on site across Perth right now</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('checkin')">
+        <span class="ti">✅</span>
+        <h3>Check In</h3>
+        <p>Contractors check in & out on site</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('qr')">
+        <span class="ti">📱</span>
+        <h3>QR Codes</h3>
+        <p>Print site QR cards for each job</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('photos')">
+        <span class="ti">📸</span>
+        <h3>Site Photos</h3>
+        <p>Document access, conditions & progress</p>
+      </div>
+      <div class="tool-tile" onclick="goTo('ai')">
+        <span class="ti">🤖</span>
+        <h3>Trade Assistant</h3>
+        <p>Ask anything — regs, specs, materials</p>
+      </div>
+    </div>
+
+    <div style="text-align:center;padding:12px 0 20px;font-size:11px;color:var(--muted);">⚡ Powered by <strong>iTabs</strong></div>
+  </div>
+
+  <!-- ══ QUOTE ══ -->
+  <div class="page" id="page-quote">
+    <div class="page-header">
+      <h1>Quick Quote</h1>
+      <p>Generate a price guide for a client</p>
+    </div>
+    <div class="page-body">
+
+      <div id="quote-form-wrap">
+        <div class="card">
+          <div class="card-title">🏠 Job Details</div>
+          <div class="field"><label>Client Name</label><input type="text" id="q-client" placeholder="e.g. The Henderson Family"></div>
+          <div class="field"><label>Suburb</label><input type="text" id="q-suburb" placeholder="e.g. Duncraig"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🔧 Service Required</div>
+          <div class="field">
+            <label>Service Type</label>
+            <select id="q-service" onchange="calcPrice()">
+              <option value="">— Select service —</option>
+              <option value="design">Garden Design Only</option>
+              <option value="full">Full Landscaping</option>
+              <option value="paving">Paving & Structures</option>
+              <option value="irrigation">Irrigation & Lawn</option>
+              <option value="pool">Pool & Paving</option>
+              <option value="combined">Full Design + Build</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Garden Size</label>
+            <select id="q-size" onchange="calcPrice()">
+              <option value="">— Approximate size —</option>
+              <option value="small">Small (under 50m²)</option>
+              <option value="medium">Medium (50–150m²)</option>
+              <option value="large">Large (150m²+)</option>
+            </select>
+          </div>
+          <div id="price-box" style="display:none">
+            <div class="price-display">
+              <div><div class="pd-label">Guide Price</div><div style="font-size:10px;color:rgba(255,255,255,.35);margin-top:2px;">Confirmed on site visit</div></div>
+              <div class="pd-range" id="pd-range">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📬 Your Details</div>
+          <div class="field"><label>Name</label><input type="text" id="q-name" placeholder="Your first name"></div>
+          <div class="grid-2">
+            <div class="field"><label>Phone</label><input type="tel" id="q-phone" placeholder="04XX XXX XXX"></div>
+            <div class="field"><label>Email</label><input type="email" id="q-email" placeholder="you@email.com"></div>
+          </div>
+          <div class="field"><label>Project Notes</label><textarea id="q-notes" placeholder="Any extra details..."></textarea></div>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-green" style="width:100%;justify-content:center;" onclick="submitQuote()">Send Quote Request →</button>
+        </div>
+      </div>
+
+      <div class="success-box" id="quote-success">
+        <div class="sbi">🌿</div>
+        <h3>Thanks! Rick will be in touch.</h3>
+        <p>Usually responded to within a few hours.<br>Check your phone or email.</p>
+        <button class="btn btn-outline" style="margin-top:16px;" onclick="resetQuote()">← New Quote</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PLAN ══ -->
+  <div class="page" id="page-plan">
+    <div class="page-header">
+      <h1>Site Plan</h1>
+      <p>23 Banksia Way, Duncraig — RL-2026-047</p>
+    </div>
+    <div class="page-body">
+      <div class="plan-wrap">
+        <div class="plan-label">↑ Street / North boundary — Scale approx. 1:100</div>
+        <svg viewBox="0 0 420 700" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="pl-lawn" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#7BBD5E"/><line x1="0" y1="4" x2="8" y2="4" stroke="#6aad4e" stroke-width="0.4"/></pattern>
+            <pattern id="pl-paving" x="0" y="0" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#C8B89A"/><rect x="0" y="0" width="7" height="7" fill="none" stroke="#b0a080" stroke-width="0.6"/><rect x="7" y="7" width="7" height="7" fill="none" stroke="#b0a080" stroke-width="0.6"/></pattern>
+            <pattern id="pl-concrete" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><rect width="20" height="20" fill="#BBBBBB"/><line x1="0" y1="10" x2="20" y2="10" stroke="#aaa" stroke-width="0.5"/><line x1="10" y1="0" x2="10" y2="20" stroke="#aaa" stroke-width="0.5"/></pattern>
+            <pattern id="pl-native" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse"><rect width="10" height="10" fill="#5C8A3C"/><circle cx="5" cy="5" r="2.5" fill="none" stroke="#4a7830" stroke-width="0.7"/></pattern>
+            <pattern id="pl-water" x="0" y="0" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#5BA4CF"/><line x1="0" y1="6" x2="12" y2="6" stroke="#4d93be" stroke-width="0.6"/></pattern>
+          </defs>
+          <rect x="15" y="15" width="390" height="670" fill="#F0EBE0" stroke="#2C3A1E" stroke-width="2.5"/>
+          <rect x="15" y="15" width="4" height="670" fill="#8B7355"/>
+          <rect x="401" y="15" width="4" height="670" fill="#8B7355"/>
+          <rect x="15" y="681" width="390" height="4" fill="#8B7355"/>
+          <rect x="15" y="15" width="140" height="9" fill="#C8A855" stroke="#a88c40" stroke-width="0.8"/>
+          <rect x="255" y="15" width="150" height="9" fill="#C8A855" stroke="#a88c40" stroke-width="0.8"/>
+          <rect x="155" y="24" width="100" height="270" fill="url(#pl-concrete)" stroke="#aaa" stroke-width="0.8"/>
+          <rect x="155" y="22" width="100" height="7" fill="#4A6741" stroke="#2C3A1E" stroke-width="1"/>
+          <line x1="155" y1="25" x2="255" y2="25" stroke="#fff" stroke-width="0.8" stroke-dasharray="6,3"/>
+          <rect x="19" y="24" width="136" height="76" fill="url(#pl-native)" stroke="#4A6741" stroke-width="0.8"/>
+          <rect x="255" y="24" width="146" height="76" fill="url(#pl-native)" stroke="#4A6741" stroke-width="0.8"/>
+          <rect x="40" y="100" width="340" height="195" fill="#E8DCC8" stroke="#2C3A1E" stroke-width="2"/>
+          <text x="210" y="191" text-anchor="middle" font-size="16" fill="#2C3A1E" font-family="Georgia" font-weight="700">HOUSE</text>
+          <text x="210" y="207" text-anchor="middle" font-size="9" fill="#888" font-family="sans-serif">12m × 8m</text>
+          <rect x="100" y="295" width="220" height="55" fill="#DDD0B8" stroke="#2C3A1E" stroke-width="1.5" stroke-dasharray="5,2.5"/>
+          <text x="210" y="326" text-anchor="middle" font-size="10" fill="#555" font-family="sans-serif">ALFRESCO</text>
+          <rect x="19" y="100" width="21" height="395" fill="#BBBBBB" stroke="#aaa" stroke-width="0.5"/>
+          <rect x="68" y="392" width="284" height="240" fill="url(#pl-paving)" stroke="#b0a080" stroke-width="1"/>
+          <rect x="98" y="430" width="224" height="112" rx="8" ry="8" fill="url(#pl-water)" stroke="#2C7BB6" stroke-width="1.5"/>
+          <text x="210" y="493" text-anchor="middle" font-size="12" fill="#fff" font-family="Georgia" font-weight="700">POOL 8×4m</text>
+          <rect x="19" y="350" width="49" height="325" fill="url(#pl-lawn)" stroke="#5a9a3a" stroke-width="0.7"/>
+          <rect x="352" y="350" width="49" height="325" fill="url(#pl-lawn)" stroke="#5a9a3a" stroke-width="0.7"/>
+          <rect x="68" y="632" width="284" height="43" fill="url(#pl-lawn)" stroke="#5a9a3a" stroke-width="0.7"/>
+          <rect x="19" y="660" width="382" height="18" fill="#2C5A18" stroke="#1a3a0a" stroke-width="0.8"/>
+          <g transform="translate(385,42)"><circle cx="0" cy="0" r="13" fill="white" stroke="#2C3A1E" stroke-width="1.2"/><polygon points="0,-10 3,-3 0,-6 -3,-3" fill="#2C3A1E"/><polygon points="0,10 3,3 0,6 -3,3" fill="#bbb"/><text x="0" y="-12" text-anchor="middle" font-size="7" fill="#2C3A1E" font-family="sans-serif" font-weight="600">N</text></g>
+          <text x="210" y="12" text-anchor="middle" font-size="9" fill="#2C3A1E" font-family="sans-serif" font-weight="500">— STREET —</text>
+          <text x="205" y="33" text-anchor="middle" font-size="7" fill="#4A6741" font-family="sans-serif">REMOTE GATE</text>
+          <circle cx="98" cy="426" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <circle cx="322" cy="426" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <circle cx="98" cy="542" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <circle cx="322" cy="542" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <circle cx="158" cy="44" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <circle cx="252" cy="44" r="3" fill="#C8A855" stroke="#2C3A1E" stroke-width="0.7"/>
+          <line x1="15" y1="8" x2="405" y2="8" stroke="#2C3A1E" stroke-width="0.8"/>
+          <text x="210" y="6" text-anchor="middle" font-size="7" fill="#2C3A1E" font-family="sans-serif">15 metres</text>
+        </svg>
+        <div class="plan-label">↓ Rear boundary — 🟡 Lighting points</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Legend</div>
+        <div class="legend-grid">
+          <div class="legend-item"><div class="legend-swatch" style="background:#E8DCC8;border-color:#2C3A1E;"></div>House footprint</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#BBBBBB;"></div>Concrete driveway</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#C8B89A;"></div>Large format paving</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#7BBD5E;"></div>Lawn</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#5BA4CF;"></div>Pool</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#5C8A3C;"></div>Native garden beds</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#2C5A18;"></div>Tropical screening</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#C8A855;"></div>Limestone wall</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#8B7355;"></div>Colorbond fencing</div>
+          <div class="legend-item"><div class="legend-swatch" style="background:#C8A855;border-radius:50%;"></div>Lighting point</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BRIEFS ══ -->
+  <div class="page" id="page-briefs">
+    <div class="page-header">
+      <h1>Contractor Briefs</h1>
+      <p>Generate scope of works per trade</p>
+    </div>
+    <div class="page-body">
+
+      <div class="card">
+        <div class="card-title">📍 Job Details</div>
+        <div class="field"><label>Site Address</label><input type="text" id="br-addr" value="23 Banksia Way, Duncraig WA 6023"></div>
+        <div class="grid-2">
+          <div class="field"><label>Job Ref</label><input type="text" id="br-ref" value="RL-2026-047"></div>
+          <div class="field"><label>Quote By</label><input type="date" id="br-deadline"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">🔨 Select Trades</div>
+        <div class="trade-chips" id="trade-chips">
+          <div class="trade-chip on" data-trade="concreter" onclick="toggleBriefTrade(this)">🏗️ Concreter</div>
+          <div class="trade-chip on" data-trade="pool" onclick="toggleBriefTrade(this)">🏊 Pool Builder</div>
+          <div class="trade-chip on" data-trade="sparky" onclick="toggleBriefTrade(this)">⚡ Electrician</div>
+          <div class="trade-chip on" data-trade="irrigation" onclick="toggleBriefTrade(this)">💧 Irrigation</div>
+          <div class="trade-chip on" data-trade="fencing" onclick="toggleBriefTrade(this)">🪟 Fencing</div>
+          <div class="trade-chip" data-trade="landscaper" onclick="toggleBriefTrade(this)">🌿 Landscaper</div>
+          <div class="trade-chip" data-trade="plumber" onclick="toggleBriefTrade(this)">🔧 Plumber</div>
+        </div>
+        <button class="btn btn-gold" onclick="genBriefs()">Generate Briefs →</button>
+      </div>
+
+      <div id="briefs-output"></div>
+    </div>
+  </div>
+
+  <!-- ══ TRACKER ══ -->
+  <div class="page" id="page-tracker">
+    <div style="display:flex;flex-direction:column;height:calc(100vh - 56px - 58px);">
+      <div class="tracker-stats">
+        <div class="ts-item"><div class="ts-num" style="color:var(--on-site)" id="t-onsite">3</div><div class="ts-lbl">On Site</div></div>
+        <div class="ts-item"><div class="ts-num" style="color:var(--transit)" id="t-transit">1</div><div class="ts-lbl">Transit</div></div>
+        <div class="ts-item"><div class="ts-num" style="color:var(--not-started)" id="t-pending">1</div><div class="ts-lbl">Pending</div></div>
+        <div class="ts-item"><div class="ts-num" style="color:var(--done)" id="t-done">1</div><div class="ts-lbl">Done</div></div>
+      </div>
+
+      <div style="position:relative;flex:1;overflow:hidden;">
+        <div id="tracker-list-view" style="height:100%;overflow-y:auto;"></div>
+        <div id="tracker-map-view" style="display:none;height:100%;"><div id="tracker-map" style="width:100%;height:100%;"></div></div>
+      </div>
+    </div>
+
+    <button class="toggle-view-btn" id="toggle-map-btn" onclick="toggleMapView()">🗺️ Map View</button>
+  </div>
+
+  <!-- ══ CHECK IN ══ -->
+  <div class="page" id="page-checkin">
+    <div class="page-header">
+      <h1>Site Check-In</h1>
+      <p>Tap your name to check in or out</p>
+    </div>
+    <div class="page-body">
+
+      <div id="ci-job-select" class="card" style="margin-bottom:14px;">
+        <div class="card-title">📍 Select Site</div>
+        <div class="field">
+          <select id="ci-job-sel" onchange="selectCIJob()">
+            <option value="">— Choose active site —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="ci-site-wrap" style="display:none;">
+        <div class="ci-site-banner">
+          <div class="ci-site-label">Active Job Site</div>
+          <div class="ci-site-addr" id="ci-addr">—</div>
+          <div class="ci-site-sub" id="ci-sub">—</div>
+        </div>
+
+        <div id="ci-contractor-list"></div>
+
+        <div class="ci-action" id="ci-action-box">
+          <div style="font-size:36px;margin-bottom:8px;" id="cia-icon">🏗️</div>
+          <div class="cia-name" id="cia-name">—</div>
+          <div style="font-size:11px;color:var(--muted);" id="cia-trade">—</div>
+          <div class="cia-time" id="cia-time">--:--:--</div>
+          <div class="cia-btns">
+            <button class="cia-btn btn-checkin-ci" id="cia-checkin" onclick="doCI('in')">✅ Check In</button>
+            <button class="cia-btn btn-checkout-ci" id="cia-checkout" onclick="doCI('out')" style="display:none;">🚪 Check Out</button>
+          </div>
+          <button class="cia-btn btn-back-ci" onclick="closeCIAction()" style="margin-top:8px;width:100%;">← Back</button>
+        </div>
+
+        <div class="ci-success" id="ci-success-box">
+          <div class="cis-icon" id="cis-icon">✅</div>
+          <div class="cis-title" id="cis-title">Checked In!</div>
+          <div class="cis-time" id="cis-time">—</div>
+          <div class="cis-detail" id="cis-detail">—</div>
+          <button class="btn btn-outline" style="margin-top:16px;color:rgba(255,255,255,.5);border-color:rgba(255,255,255,.2);" onclick="resetCI()">← Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ QR ══ -->
+  <div class="page" id="page-qr">
+    <div class="page-header">
+      <h1>QR Site Cards</h1>
+      <p>Print, laminate & cable-tie to the gate</p>
+    </div>
+    <div class="page-body">
+
+      <div class="card" style="background:rgba(200,168,85,.08);border-color:rgba(200,168,85,.3);">
+        <div class="card-title" style="color:var(--gold);">💡 How it works</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+          1. Generate a QR card for each site below<br>
+          2. Print &amp; laminate — cable-tie to the front gate<br>
+          3. Contractor scans with phone camera — no app needed<br>
+          4. Taps name → Check In / Check Out → Rick's dashboard updates
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">➕ Add Site</div>
+        <div class="field"><label>Street Address</label><input type="text" id="qr-addr" placeholder="23 Banksia Way"></div>
+        <div class="grid-2">
+          <div class="field"><label>Suburb</label><input type="text" id="qr-sub" placeholder="Duncraig WA 6023"></div>
+          <div class="field"><label>Job Ref</label><input type="text" id="qr-ref" placeholder="RL-2026-047"></div>
+        </div>
+        <button class="btn btn-green" onclick="addQR()">Generate QR →</button>
+      </div>
+
+      <div id="qr-cards"></div>
+      <div style="text-align:center;margin-top:4px;"><button class="btn btn-dark" onclick="window.print()">🖨️ Print All Cards</button></div>
+    </div>
+  </div>
+
+  <!-- ══ PHOTOS ══ -->
+  <div class="page" id="page-photos">
+    <div class="page-header">
+      <h1>Site Photos</h1>
+      <p>Document access, conditions & progress</p>
+    </div>
+    <div class="page-body">
+
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-title">📍 Select Job</div>
+        <div class="field">
+          <select id="photo-job-sel" onchange="switchPhotoJob()" style="background:#fff;">
+            <option value="">— Choose a job —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="photo-content" style="display:none;">
+        <!-- Upload zone -->
+        <div class="photo-upload-zone" onclick="document.getElementById('photo-file-input').click()">
+          <div class="pu-icon">📸</div>
+          <p>Tap to take a photo or upload from gallery</p>
+          <small>JPG, PNG — stored on this device</small>
+        </div>
+        <input type="file" id="photo-file-input" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoUpload(event)">
+
+        <!-- Caption input — shown after photo selected -->
+        <div id="photo-caption-wrap" style="display:none;">
+          <input type="text" id="photo-caption-input" placeholder="Caption — e.g. Site access, Drainage issue, Front gate…">
+          <button class="btn btn-green" style="width:100%;justify-content:center;" onclick="savePhoto()">Save Photo →</button>
+        </div>
+
+        <!-- Job photo tabs -->
+        <div id="photo-tabs-wrap" style="display:none;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px;">Filter by label</div>
+          <div class="photo-tabs" id="photo-tabs"></div>
+        </div>
+
+        <!-- Photo grid -->
+        <div id="photo-grid" class="photo-grid"></div>
+        <div id="photo-empty" class="photo-empty" style="display:none;">
+          <div style="font-size:36px;margin-bottom:10px;">📷</div>
+          No photos yet for this job.<br>Tap above to add the first one.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ══ AI ASSISTANT ══ -->
+  <div class="page" id="page-ai">
+    <div class="page-header">
+      <h1>Trade Assistant</h1>
+      <p>Ask anything about your jobs</p>
+    </div>
+    <div class="ai-chat-wrap">
+      <div class="ai-messages" id="ai-messages">
+        <div class="ai-welcome" id="ai-welcome">
+          <div class="aw-icon">🤖</div>
+          <h3>Hi Rick — what do you need?</h3>
+          <p>Ask me anything about council regs, drainage specs, limestone walls, turf areas, contractor scopes — whatever comes up on site.</p>
+        </div>
+      </div>
+      <div class="ai-chips" id="ai-chips">
+        <button class="ai-chip" onclick="aiChip(this)">Limestone wall height rules</button>
+        <button class="ai-chip" onclick="aiChip(this)">Drainage spec for pool area</button>
+        <button class="ai-chip" onclick="aiChip(this)">How much turf for 150m²</button>
+        <button class="ai-chip" onclick="aiChip(this)">Pool fencing compliance Perth</button>
+        <button class="ai-chip" onclick="aiChip(this)">Concrete driveway thickness</button>
+      </div>
+      <div class="ai-input-row">
+        <textarea id="ai-input" placeholder="Ask anything…" rows="1" onkeydown="aiKeydown(event)" oninput="aiResize(this)"></textarea>
+        <button class="ai-send-btn" id="ai-send-btn" onclick="aiSend()">➤</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- API KEY SETUP -->
+<div class="key-setup-overlay" id="key-setup-overlay">
+  <div class="key-setup-card">
+    <h2>🤖 Set Up Trade Assistant</h2>
+    <p>The AI assistant needs an Anthropic API key to work. This is stored only on your device — never uploaded anywhere.</p>
+    <div class="steps">
+      1. Go to <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>
+      2. Click <strong>API Keys → Create Key</strong><br>
+      3. Copy the key (starts with sk-ant-...)<br>
+      4. Paste it below
+    </div>
+    <input type="password" id="key-input" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button class="btn btn-green" style="width:100%;justify-content:center;" onclick="saveApiKey()">Save & Activate →</button>
+    <button style="width:100%;margin-top:8px;background:none;border:none;font-size:12px;color:var(--muted);cursor:pointer;padding:8px;" onclick="closeKeySetup()">Skip for now</button>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="photo-lightbox" id="photo-lightbox" onclick="closeLightbox()">
+  <button class="lb-close" onclick="closeLightbox()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-cap" id="lb-cap"></div>
+</div>
+<nav class="bottom-nav">
+  <div class="nav-item active" id="nav-home" onclick="goTo('home')">
+    <div class="nav-icon">🏠</div>
+    <div class="nav-label">Home</div>
+  </div>
+  <div class="nav-item" id="nav-quote" onclick="goTo('quote')">
+    <div class="nav-icon">💬</div>
+    <div class="nav-label">Quote</div>
+  </div>
+  <div class="nav-item" id="nav-tracker" onclick="goTo('tracker')">
+    <div class="nav-icon">📍</div>
+    <div class="nav-label">Tracker</div>
+  </div>
+  <div class="nav-item" id="nav-briefs" onclick="goTo('briefs')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">Briefs</div>
+  </div>
+  <div class="nav-item" id="nav-more" onclick="toggleMore()">
+    <div class="nav-icon">⋯</div>
+    <div class="nav-label">More</div>
+  </div>
+</nav>
+
+<!-- MORE MENU -->
+<div id="more-menu" style="display:none;position:fixed;bottom:58px;right:0;left:0;background:var(--earth);border-top:1px solid rgba(255,255,255,.1);z-index:300;padding:8px 0;">
+  <div style="display:flex;justify-content:space-around;padding:8px 16px;">
+    <div style="text-align:center;cursor:pointer;padding:10px 20px;" onclick="goTo('plan');toggleMore()">
+      <div style="font-size:26px;margin-bottom:4px;">🗺️</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">Site Plan</div>
+    </div>
+    <div style="text-align:center;cursor:pointer;padding:10px 20px;" onclick="goTo('checkin');toggleMore()">
+      <div style="font-size:26px;margin-bottom:4px;">✅</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">Check In</div>
+    </div>
+    <div style="text-align:center;cursor:pointer;padding:10px 20px;" onclick="goTo('qr');toggleMore()">
+      <div style="font-size:26px;margin-bottom:4px;">📱</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">QR Codes</div>
+    </div>
+    <div style="text-align:center;cursor:pointer;padding:10px 20px;" onclick="goTo('photos');toggleMore()">
+      <div style="font-size:26px;margin-bottom:4px;">📸</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">Photos</div>
+    </div>
+    <div style="text-align:center;cursor:pointer;padding:10px 20px;" onclick="goTo('ai');toggleMore()">
+      <div style="font-size:26px;margin-bottom:4px;">🤖</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px;">Ask AI</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══ DATA ══
+const contractors = [
+  {id:'c1',name:'Dave Marlow',   trade:'Concreter',   icon:'🏗️',phone:'0411 222 333'},
+  {id:'c2',name:'Steve & Co',    trade:'Pool Builder', icon:'🏊',phone:'0422 333 444'},
+  {id:'c3',name:'Jake Sparks',   trade:'Electrician',  icon:'⚡',phone:'0433 444 555'},
+  {id:'c4',name:'Blue Irrigation',trade:'Irrigation',  icon:'💧',phone:'0444 555 666'},
+  {id:'c5',name:'Border Fencing',trade:'Fencing',      icon:'🪟',phone:'0455 666 777'},
+  {id:'c6',name:'Turf Masters',  trade:'Landscaper',   icon:'🌿',phone:'0466 777 888'},
+  {id:'c7',name:'Ace Paving',    trade:'Paving',       icon:'🧱',phone:'0477 888 999'},
+  {id:'c8',name:'FlowRight',     trade:'Plumber',      icon:'🔧',phone:'0488 999 000'},
+];
+
+const jobs = [
+  {id:'j1',ref:'RL-2026-047',address:'23 Banksia Way',suburb:'Duncraig',lat:-31.820,lng:115.778,status:'on-site',
+   contractors:[{cid:'c2',checkIn:'07:30',checkOut:null,status:'on-site'},{cid:'c3',checkIn:'09:00',checkOut:null,status:'on-site'}],
+   scheduledStart:'07:00',scheduledEnd:'17:00'},
+  {id:'j2',ref:'RL-2026-043',address:'7 Flame Tree Cres',suburb:'Cottesloe',lat:-31.994,lng:115.757,status:'on-site',
+   contractors:[{cid:'c1',checkIn:'06:45',checkOut:null,status:'on-site'},{cid:'c5',checkIn:'08:00',checkOut:null,status:'on-site'}],
+   scheduledStart:'06:45',scheduledEnd:'15:00'},
+  {id:'j3',ref:'RL-2026-044',address:'112 Karrinyup Rd',suburb:'Karrinyup',lat:-31.869,lng:115.791,status:'transit',
+   contractors:[{cid:'c4',checkIn:null,checkOut:null,status:'transit'}],
+   scheduledStart:'10:30',scheduledEnd:'14:00'},
+  {id:'j4',ref:'RL-2026-041',address:'88 Stirling Hwy',suburb:'Nedlands',lat:-31.975,lng:115.808,status:'done',
+   contractors:[{cid:'c6',checkIn:'07:00',checkOut:'13:30',status:'done'}],
+   scheduledStart:'07:00',scheduledEnd:'14:00'},
+  {id:'j5',ref:'RL-2026-048',address:'34 Oceanic Dr',suburb:'Wembley Downs',lat:-31.892,lng:115.787,status:'not-started',
+   contractors:[{cid:'c1',checkIn:null,checkOut:null,status:'not-started'},{cid:'c8',checkIn:null,checkOut:null,status:'not-started'}],
+   scheduledStart:'13:00',scheduledEnd:'17:00'},
+  {id:'j6',ref:'RL-2026-045',address:'5 Jarrad St',suburb:'Subiaco',lat:-31.947,lng:115.826,status:'on-site',
+   contractors:[{cid:'c4',checkIn:'08:15',checkOut:null,status:'on-site'},{cid:'c6',checkIn:'07:45',checkOut:null,status:'on-site'}],
+   scheduledStart:'07:45',scheduledEnd:'16:00'},
+];
+
+const statusColors={'on-site':'#7DC44E','transit':'#E8A030','not-started':'#C8A855','done':'#4A8FB5'};
+const statusLabels={'on-site':'On Site','transit':'In Transit','not-started':'Not Started','done':'Completed'};
+
+const priceTable={
+  design:{small:'$800–$1,200',medium:'$1,200–$2,000',large:'$2,000–$3,500'},
+  full:{small:'$3,500–$6,000',medium:'$6,000–$12,000',large:'$12,000–$25,000+'},
+  paving:{small:'$2,000–$4,000',medium:'$4,000–$9,000',large:'$9,000–$18,000'},
+  irrigation:{small:'$1,200–$2,000',medium:'$2,000–$4,000',large:'$4,000–$7,000'},
+  pool:{small:'$35,000–$50,000',medium:'$50,000–$75,000',large:'$75,000–$120,000+'},
+  combined:{small:'$5,000–$9,000',medium:'$9,000–$18,000',large:'$18,000–$35,000+'},
+};
+
+const briefScopes={
+  concreter:['Supply & lay reinforced concrete driveway — 100mm slab, broom finish','Concrete driveway: 3.5m wide × 9m long (approx 32m²)','Control joints cut at 3m intervals','Concrete edging / mow strip along driveway both sides','Service path — left boundary, 1m wide × 20m, exposed aggregate finish','Sub-base compaction and preparation included'],
+  pool:['Supply & construct concrete (gunite) swimming pool — 8m × 4m','Depth 1.2m shallow to 1.8m deep end','Glass mosaic waterline tile, 150mm band','Limestone drop-edge coping 300mm wide all sides','Variable speed pump, sand filter, LED pool light','Solar pool heating — panels, controller, roof mount','Large format pavers: 600×600 porcelain, 1.5m wide surround all sides','All permits, engineering and inspections included'],
+  sparky:['14 x garden lighting points (path, uplights, pool)','6 x spike mount warm LED path lights — driveway edges','6 x in-ground IP67 uplights — feature plants','2 x in-pool 12V colour LED lights','Remote sliding gate motor — wiring, conduit to meter board, 2x remotes','2 x weatherproof outdoor GPOs','Certificate of Electrical Compliance on completion'],
+  irrigation:['8-station smart WiFi irrigation controller','14 x Hunter PGP pop-up sprinkler heads — lawn zones','Inline drip irrigation — garden beds, 300mm spacing','4 x solenoid valves with valve boxes','Backflow prevention device (RPZD) — Water Corp compliant','Brass hose tap near pool','Commission and programme controller'],
+  fencing:['1.8m Colorbond fencing — left boundary 25m','1.8m Colorbond fencing — right boundary 25m','1.8m Colorbond fencing — rear boundary 15m','Zincalume posts at 2.4m spacing, concrete footings','Limestone feature wall — front boundary 15m, 400mm high, brushed coping','Remote sliding driveway gate — galv steel, powder coat, motor & 2x remotes','Pedestrian gate × 1 (900mm wide)'],
+  landscaper:['Rotary hoe and level lawn areas — gypsum and starter fertiliser','Supply and lay Sir Walter Buffalo turf — approx 120m²','Steel lawn edging along all borders','WA native plants (front beds) — 24 plants','Tropical screening plants (rear) — 22 plants','Feature trees × 2 (Frangipani or Jacaranda, 100L)','Premium hardwood mulch — 75mm depth'],
+  plumber:['Outdoor shower — stainless mixer, chrome fittings, floor drain','Location: alfresco wall as per plan','Hose tap near pool — brass, 20mm copper supply','Connect pool solar heating to hot water circuit','Certificate of Compliance on completion'],
+};
+
+// ══ NAVIGATION ══
+function goTo(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const navEl=document.getElementById('nav-'+page);
+  if(navEl)navEl.classList.add('active');
+  document.getElementById('more-menu').style.display='none';
+  if(page==='tracker')initTracker();
+  if(page==='checkin')initCI();
+  if(page==='qr')initQR();
+  if(page==='photos')initPhotos();
+}
+
+function toggleMore(){
+  const m=document.getElementById('more-menu');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+
+// ══ CLOCK ══
+function tick(){
+  const now=new Date();
+  document.getElementById('app-time').textContent=now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  if(document.getElementById('cia-time'))
+    document.getElementById('cia-time').textContent=now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+tick();setInterval(tick,1000);
+
+// ══ QUOTE ══
+function calcPrice(){
+  const svc=document.getElementById('q-service').value;
+  const sz=document.getElementById('q-size').value;
+  const box=document.getElementById('price-box');
+  if(svc&&sz&&priceTable[svc]&&priceTable[svc][sz]){
+    document.getElementById('pd-range').textContent=priceTable[svc][sz];
+    box.style.display='block';
+  } else box.style.display='none';
+}
+
+function submitQuote(){
+  const name=document.getElementById('q-name').value.trim();
+  const phone=document.getElementById('q-phone').value.trim();
+  const email=document.getElementById('q-email').value.trim();
+  if(!name||(!phone&&!email)){alert('Please enter your name and contact details.');return;}
+  document.getElementById('quote-form-wrap').style.display='none';
+  document.getElementById('quote-success').style.display='block';
+}
+function resetQuote(){
+  document.getElementById('quote-form-wrap').style.display='block';
+  document.getElementById('quote-success').style.display='none';
+  document.getElementById('price-box').style.display='none';
+}
+
+// ══ BRIEFS ══
+let selectedTrades=['concreter','pool','sparky','irrigation','fencing'];
+function toggleBriefTrade(el){
+  el.classList.toggle('on');
+  const t=el.dataset.trade;
+  if(selectedTrades.includes(t))selectedTrades=selectedTrades.filter(x=>x!==t);
+  else selectedTrades.push(t);
+}
+
+function genBriefs(){
+  const addr=document.getElementById('br-addr').value||'Site address';
+  const ref=document.getElementById('br-ref').value||'RL-2026-XXX';
+  const dl=document.getElementById('br-deadline').value;
+  const dlStr=dl?new Date(dl).toLocaleDateString('en-AU'):'TBC';
+  const out=document.getElementById('briefs-output');
+  out.innerHTML='';
+  const tradeNames={concreter:'🏗️ Concreter',pool:'🏊 Pool Builder',sparky:'⚡ Electrician',irrigation:'💧 Irrigation',fencing:'🪟 Fencing',landscaper:'🌿 Landscaper',plumber:'🔧 Plumber'};
+  selectedTrades.forEach(t=>{
+    const scope=briefScopes[t];
+    if(!scope)return;
+    const card=document.createElement('div');
+    card.className='brief-card visible';
+    card.innerHTML=`
+      <div class="brief-card-header">
+        <h3>${tradeNames[t]||t}</h3>
+        <span class="badge badge-gold">${ref}</span>
+      </div>
+      <div class="brief-card-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">📍 ${addr} &nbsp;·&nbsp; Quote by: <strong>${dlStr}</strong></div>
+        ${scope.map(s=>`<div class="scope-item">${s}</div>`).join('')}
+        <div style="margin-top:12px;padding:10px;background:rgba(200,168,85,.08);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;font-size:11px;color:var(--muted);">
+          Send quote to: <strong>rick@rickslandscaping.com.au</strong> · 0400 000 000
+        </div>
+      </div>`;
+    out.appendChild(card);
+  });
+  if(!selectedTrades.length){out.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Select at least one trade above.</div>';}
+  out.scrollIntoView({behavior:'smooth'});
+}
+
+// ══ TRACKER ══
+let mapInited=false,tmap=null,showingMap=false;
+
+function initTracker(){
+  renderTrackerList();
+  updateTrackerStats();
+}
+
+function renderTrackerList(){
+  const el=document.getElementById('tracker-list-view');
+  el.innerHTML=jobs.map(j=>{
+    const chips=j.contractors.map(jc=>{
+      const c=contractors.find(x=>x.id===jc.cid);
+      return c?`<div class="jr-chip ${jc.status==='on-site'?'active':''}">${c.icon} ${c.trade}</div>`:'';
+    }).join('');
+    return `<div class="job-row s-${j.status}">
+      <div class="jr-top">
+        <div><div class="jr-addr">${j.address}</div><div class="jr-sub">${j.suburb}</div></div>
+        <span class="badge badge-${j.status==='on-site'?'green':j.status==='transit'?'amber':j.status==='done'?'blue':'gold'}">${statusLabels[j.status]}</span>
+      </div>
+      <div class="jr-chips">${chips}</div>
+      <div class="jr-foot"><div class="jr-time">${j.scheduledStart}–${j.scheduledEnd}</div><div class="jr-ref">${j.ref}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function updateTrackerStats(){
+  document.getElementById('t-onsite').textContent=jobs.filter(j=>j.status==='on-site').length;
+  document.getElementById('t-transit').textContent=jobs.filter(j=>j.status==='transit').length;
+  document.getElementById('t-pending').textContent=jobs.filter(j=>j.status==='not-started').length;
+  document.getElementById('t-done').textContent=jobs.filter(j=>j.status==='done').length;
+}
+
+function toggleMapView(){
+  showingMap=!showingMap;
+  document.getElementById('tracker-list-view').style.display=showingMap?'none':'block';
+  document.getElementById('tracker-map-view').style.display=showingMap?'block':'none';
+  document.getElementById('toggle-map-btn').textContent=showingMap?'📋 List View':'🗺️ Map View';
+  if(showingMap&&!mapInited){
+    tmap=L.map('tracker-map').setView([-31.93,115.80],11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(tmap);
+    jobs.forEach(j=>{
+      const col=statusColors[j.status];
+      const icon=L.divIcon({className:'',html:`<div style="width:32px;height:32px;background:${col};border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid rgba(0,0,0,.3);box-shadow:0 3px 10px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;"><span style="transform:rotate(45deg);font-size:12px;display:block;">${j.contractors.length}</span></div>`,iconSize:[32,32],iconAnchor:[16,32]});
+      L.marker([j.lat,j.lng],{icon}).addTo(tmap).bindPopup(`<b>${j.address}, ${j.suburb}</b><br>${statusLabels[j.status]}<br>${j.ref}`);
+    });
+    mapInited=true;
+  }
+  if(showingMap&&tmap)setTimeout(()=>tmap.invalidateSize(),100);
+}
+
+// ══ CHECK IN ══
+let ciSelectedContractor=null;
+const CI_KEY='rl_ci_';
+
+function initCI(){
+  const sel=document.getElementById('ci-job-sel');
+  sel.innerHTML='<option value="">— Choose active site —</option>';
+  jobs.filter(j=>j.status!=='done').forEach(j=>{
+    const opt=document.createElement('option');
+    opt.value=j.id;
+    opt.textContent=`${j.address}, ${j.suburb} (${j.ref})`;
+    sel.appendChild(opt);
+  });
+}
+
+function selectCIJob(){
+  const jid=document.getElementById('ci-job-sel').value;
+  if(!jid){document.getElementById('ci-site-wrap').style.display='none';return;}
+  const job=jobs.find(j=>j.id===jid);
+  document.getElementById('ci-addr').textContent=job.address;
+  document.getElementById('ci-sub').textContent=`${job.suburb} · ${job.ref}`;
+  document.getElementById('ci-site-wrap').style.display='block';
+  document.getElementById('ci-action-box').classList.remove('visible');
+  document.getElementById('ci-success-box').classList.remove('visible');
+  renderCIContractors(job);
+}
+
+function renderCIContractors(job){
+  const checkins=getCI(job.id);
+  const el=document.getElementById('ci-contractor-list');
+  el.innerHTML=contractors.map(c=>{
+    const rec=checkins[c.id];
+    let badge='';
+    if(rec?.checkIn&&!rec?.checkOut)badge=`<span class="badge badge-green">On Site</span>`;
+    else if(rec?.checkOut)badge=`<span class="badge badge-blue">Departed</span>`;
+    return `<button class="contractor-btn ${rec?.checkIn&&!rec?.checkOut?'on-site':''}" onclick="selectCI('${c.id}','${job.id}')">
+      <div class="cb-ico">${c.icon}</div>
+      <div style="flex:1;text-align:left;"><div class="cb-name">${c.name}</div><div class="cb-trade">${c.trade}</div></div>
+      ${badge}
+    </button>`;
+  }).join('');
+}
+
+function selectCI(cid,jid){
+  ciSelectedContractor={cid,jid};
+  const c=contractors.find(x=>x.id===cid);
+  const checkins=getCI(jid);
+  const rec=checkins[cid];
+  document.getElementById('cia-icon').textContent=c.icon;
+  document.getElementById('cia-name').textContent=c.name;
+  document.getElementById('cia-trade').textContent=c.trade;
+  const hasIn=rec?.checkIn&&!rec?.checkOut;
+  document.getElementById('cia-checkin').style.display=hasIn?'none':'block';
+  document.getElementById('cia-checkout').style.display=hasIn?'block':'none';
+  document.getElementById('ci-action-box').classList.add('visible');
+  document.getElementById('ci-success-box').classList.remove('visible');
+}
+
+function doCI(type){
+  const now=new Date();
+  const time=now.toLocaleTimeString('en-AU',{hour:'2-digit',minute:'2-digit'});
+  const {cid,jid}=ciSelectedContractor;
+  const checkins=getCI(jid);
+  if(type==='in'){checkins[cid]={checkIn:time,checkOut:null};}
+  else{if(checkins[cid])checkins[cid].checkOut=time;}
+  saveCI(jid,checkins);
+  const isIn=type==='in';
+  document.getElementById('cis-icon').textContent=isIn?'✅':'👋';
+  document.getElementById('cis-title').textContent=isIn?'Checked In!':'Checked Out!';
+  document.getElementById('cis-time').textContent=time;
+  const c=contractors.find(x=>x.id===cid);
+  document.getElementById('cis-detail').textContent=`${c.name} · ${isIn?'Arrived on site':'Departed site'}`;
+  document.getElementById('ci-action-box').classList.remove('visible');
+  document.getElementById('ci-success-box').classList.add('visible');
+  const job=jobs.find(j=>j.id===jid);
+  renderCIContractors(job);
+  updateTrackerStats();
+}
+
+function closeCIAction(){document.getElementById('ci-action-box').classList.remove('visible');}
+function resetCI(){
+  document.getElementById('ci-success-box').classList.remove('visible');
+  document.getElementById('ci-action-box').classList.remove('visible');
+}
+
+function getCI(jid){try{return JSON.parse(localStorage.getItem(CI_KEY+jid)||'{}')}catch(e){return{};}}
+function saveCI(jid,d){localStorage.setItem(CI_KEY+jid,JSON.stringify(d));}
+
+// ══ QR ══
+let qrJobs=[];
+function initQR(){
+  if(!qrJobs.length){
+    jobs.forEach(j=>qrJobs.push({address:j.address,suburb:j.suburb,ref:j.ref}));
+    renderQRCards();
+  }
+}
+
+function addQR(){
+  const addr=document.getElementById('qr-addr').value.trim();
+  const sub=document.getElementById('qr-sub').value.trim();
+  const ref=document.getElementById('qr-ref').value.trim();
+  if(!addr){alert('Please enter an address');return;}
+  qrJobs.push({address:addr,suburb:sub,ref});
+  document.getElementById('qr-addr').value='';
+  document.getElementById('qr-sub').value='';
+  document.getElementById('qr-ref').value='';
+  renderQRCards();
+}
+
+function renderQRCards(){
+  const el=document.getElementById('qr-cards');
+  el.innerHTML=qrJobs.map((j,i)=>{
+    const url=`${window.location.href.split('?')[0]}?job=${encodeURIComponent(j.ref)}&addr=${encodeURIComponent(j.address)}&sub=${encodeURIComponent(j.suburb)}`;
+    const qrSrc=`https://chart.googleapis.com/chart?cht=qr&chl=${encodeURIComponent(url)}&chs=280x280&choe=UTF-8&chld=M|2`;
+    return `<div class="qr-card">
+      <div class="qr-card-top">
+        <div><div class="qrc-addr">${j.address}</div><div style="font-size:11px;color:rgba(255,255,255,.4);">${j.suburb}</div></div>
+        <div class="qrc-ref">${j.ref}</div>
+      </div>
+      <div class="qrc-body">
+        <img src="${qrSrc}" alt="QR Code">
+        <div class="qrc-hint">📱 Scan to Check In / Out</div>
+        <div style="font-size:10px;color:rgba(106,138,90,.6);margin-top:3px;">No app needed — works on any phone camera</div>
+      </div>
+      <div class="qrc-foot">${url}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══ PHOTOS ══
+const PHOTO_KEY = 'rl_photos_';
+let currentPhotoJob = null;
+let pendingPhotoData = null;
+let activePhotoTab = 'all';
+
+function initPhotos() {
+  const sel = document.getElementById('photo-job-sel');
+  sel.innerHTML = '<option value="">— Choose a job —</option>';
+  jobs.forEach(j => {
+    const opt = document.createElement('option');
+    opt.value = j.id;
+    opt.textContent = `${j.address}, ${j.suburb} (${j.ref})`;
+    sel.appendChild(opt);
+  });
+}
+
+function switchPhotoJob() {
+  const jid = document.getElementById('photo-job-sel').value;
+  if (!jid) { document.getElementById('photo-content').style.display = 'none'; return; }
+  currentPhotoJob = jid;
+  activePhotoTab = 'all';
+  document.getElementById('photo-content').style.display = 'block';
+  document.getElementById('photo-caption-wrap').style.display = 'none';
+  pendingPhotoData = null;
+  renderPhotoGrid();
+}
+
+function handlePhotoUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    pendingPhotoData = ev.target.result;
+    document.getElementById('photo-caption-wrap').style.display = 'block';
+    document.getElementById('photo-caption-input').value = '';
+    document.getElementById('photo-caption-input').focus();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function savePhoto() {
+  if (!pendingPhotoData || !currentPhotoJob) return;
+  const caption = document.getElementById('photo-caption-input').value.trim() || 'Site photo';
+  const photos = getPhotos(currentPhotoJob);
+  photos.push({
+    id: Date.now(),
+    data: pendingPhotoData,
+    caption: caption,
+    ts: new Date().toLocaleString('en-AU', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})
+  });
+  savePhotos(currentPhotoJob, photos);
+  pendingPhotoData = null;
+  document.getElementById('photo-caption-wrap').style.display = 'none';
+  renderPhotoGrid();
+}
+
+function deletePhoto(id) {
+  if (!confirm('Delete this photo?')) return;
+  const photos = getPhotos(currentPhotoJob).filter(p => p.id !== id);
+  savePhotos(currentPhotoJob, photos);
+  renderPhotoGrid();
+}
+
+function renderPhotoGrid() {
+  const photos = getPhotos(currentPhotoJob);
+  const grid = document.getElementById('photo-grid');
+  const empty = document.getElementById('photo-empty');
+  const tabsWrap = document.getElementById('photo-tabs-wrap');
+  const tabsEl = document.getElementById('photo-tabs');
+
+  // Build label tabs
+  const labels = ['all', ...new Set(photos.map(p => p.caption))];
+  if (photos.length > 0) {
+    tabsWrap.style.display = 'block';
+    tabsEl.innerHTML = labels.map(l =>
+      `<button class="photo-tab ${l === activePhotoTab ? 'active' : ''}" onclick="setPhotoTab('${l.replace(/'/g,"\\'")}')">
+        ${l === 'all' ? `All (${photos.length})` : l}
+      </button>`
+    ).join('');
+  } else {
+    tabsWrap.style.display = 'none';
+  }
+
+  const filtered = activePhotoTab === 'all' ? photos : photos.filter(p => p.caption === activePhotoTab);
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    grid.innerHTML = filtered.map(p => `
+      <div class="photo-card">
+        <img src="${p.data}" alt="${p.caption}" onclick="openLightbox('${p.id}','${p.caption.replace(/'/g,"\\'")}')">
+        <button class="photo-card-del" onclick="deletePhoto(${p.id})" title="Delete">✕</button>
+        <div class="photo-card-body">
+          <div class="photo-card-cap">${p.caption}</div>
+          <div class="photo-card-meta">${p.ts}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+function setPhotoTab(label) {
+  activePhotoTab = label;
+  renderPhotoGrid();
+}
+
+function openLightbox(id, caption) {
+  const photos = getPhotos(currentPhotoJob);
+  const p = photos.find(x => x.id == id);
+  if (!p) return;
+  document.getElementById('lb-img').src = p.data;
+  document.getElementById('lb-cap').textContent = caption;
+  document.getElementById('photo-lightbox').classList.add('open');
+}
+
+function closeLightbox() {
+  document.getElementById('photo-lightbox').classList.remove('open');
+}
+
+function getPhotos(jid) { try { return JSON.parse(localStorage.getItem(PHOTO_KEY + jid) || '[]'); } catch(e) { return []; } }
+function savePhotos(jid, d) { localStorage.setItem(PHOTO_KEY + jid, JSON.stringify(d)); }
+
+// ══ API KEY MANAGEMENT ══
+const API_KEY_STORAGE = 'rl_api_key';
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || '';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('key-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    alert('That doesn\'t look right — the key should start with sk-ant-');
+    return;
+  }
+  localStorage.setItem(API_KEY_STORAGE, key);
+  document.getElementById('key-setup-overlay').classList.remove('open');
+  // Show confirmation
+  const btn = document.getElementById('ai-header-btn');
+  btn.style.background = 'rgba(125,196,78,.4)';
+  setTimeout(() => { btn.style.background = ''; }, 2000);
+}
+
+function closeKeySetup() {
+  document.getElementById('key-setup-overlay').classList.remove('open');
+}
+
+function checkApiKey() {
+  if (!getApiKey()) {
+    document.getElementById('key-setup-overlay').classList.add('open');
+    return false;
+  }
+  return true;
+}
+
+// ══ AI DRAWER (header bubble) ══
+let aiDrawerOpen = false;
+let aiDrawerHistory = [];
+let aiDrawerLoading = false;
+
+function toggleAIDrawer() {
+  if (!getApiKey()) { document.getElementById('key-setup-overlay').classList.add('open'); return; }
+  aiDrawerOpen = !aiDrawerOpen;
+  const drawer = document.getElementById('ai-drawer');
+  drawer.style.display = aiDrawerOpen ? 'flex' : 'none';
+  drawer.style.flexDirection = 'column';
+  if (aiDrawerOpen) {
+    document.getElementById('ai-drawer-input').focus();
+    // Mark as seen — remove green dot
+    document.getElementById('ai-header-btn').classList.remove('has-chat');
+  }
+}
+
+function aiDrawerKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiDrawerSend(); }
+}
+
+function aiDrawerChip(btn) {
+  document.getElementById('ai-drawer-input').value = btn.textContent.trim();
+  btn.parentElement.style.display = 'none';
+  aiDrawerSend();
+}
+
+async function aiDrawerSend() {
+  const input = document.getElementById('ai-drawer-input');
+  const text = input.value.trim();
+  if (!text || aiDrawerLoading) return;
+
+  const welcome = document.getElementById('ai-drawer-welcome');
+  if (welcome) welcome.style.display = 'none';
+  document.getElementById('ai-drawer-chips').style.display = 'none';
+
+  aiDrawerHistory.push({ role: 'user', content: text });
+  appendDrawerMsg('user', text);
+  input.value = '';
+  input.style.height = '42px';
+
+  aiDrawerLoading = true;
+  const btn = document.getElementById('ai-drawer-send-btn');
+  btn.disabled = true;
+  const loadId = 'dload-' + Date.now();
+  appendDrawerMsg('assistant loading', '…', loadId);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildAISystem(),
+        messages: aiDrawerHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Sorry, couldn\'t get an answer. Try again.';
+    aiDrawerHistory.push({ role: 'assistant', content: reply });
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) { loadEl.classList.remove('loading'); loadEl.innerHTML = formatAIText(reply); }
+  } catch(err) {
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) { loadEl.classList.remove('loading'); loadEl.textContent = 'Connection error — check internet and try again.'; }
+  }
+
+  aiDrawerLoading = false;
+  btn.disabled = false;
+  scrollDrawerToBottom();
+}
+
+function appendDrawerMsg(cls, text, id) {
+  const msgs = document.getElementById('ai-drawer-messages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + cls;
+  if (id) div.id = id;
+  div.innerHTML = cls.includes('user') ? escapeHtml(text) : (cls.includes('loading') ? text : formatAIText(text));
+  msgs.appendChild(div);
+  scrollDrawerToBottom();
+}
+
+function scrollDrawerToBottom() {
+  const msgs = document.getElementById('ai-drawer-messages');
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+
+// ══ AI ASSISTANT ══
+const AI_SYSTEM_BASE = `You are a practical trade assistant for Rick, a Perth WA landscaping project manager. He designs landscapes and subcontracts all the actual work — concreting, turf, irrigation, fencing, limestone retaining walls, pools, paving, planting, and electrical.
+
+Answer questions concisely and practically. Rick is on site or between jobs — he needs quick, useful answers. Focus on:
+- Perth/WA specific council regulations and standards
+- Australian Standards (AS 4678 for retaining walls, AS 1926.1 for pool fencing, etc.)
+- Material quantities and calculations
+- Trade specs and scope of works
+- Contractor coordination and sequencing
+- Drainage, soil conditions (Perth sandy soils), coastal considerations
+
+Keep answers short and scannable. Use bullet points for multi-part answers. If a calculation is needed, show your working briefly. Always flag when a licensed professional or engineer is required.`;
+
+function buildAISystem() {
+  // Build a live snapshot of Rick's current jobs and contractors
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-AU', {hour:'2-digit', minute:'2-digit'});
+  const dateStr = now.toLocaleDateString('en-AU', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  // Summarise jobs
+  const jobLines = jobs.map(j => {
+    const ctrs = j.contractors.map(jc => {
+      const c = contractors.find(x => x.id === jc.cid);
+      if (!c) return '';
+      const ciData = (() => { try { return JSON.parse(localStorage.getItem('rl_ci_' + j.id) || '{}'); } catch(e) { return {}; } })();
+      const rec = ciData[jc.cid];
+      let ciStr = '';
+      if (rec?.checkIn && !rec?.checkOut) ciStr = ` (checked in ${rec.checkIn})`;
+      else if (rec?.checkIn && rec?.checkOut) ciStr = ` (checked in ${rec.checkIn}, out ${rec.checkOut})`;
+      return `${c.name} — ${c.trade}${ciStr}`;
+    }).filter(Boolean).join('; ');
+    return `  • ${j.ref} | ${j.address}, ${j.suburb} | Status: ${j.status} | Scheduled: ${j.scheduledStart}–${j.scheduledEnd} | Contractors: ${ctrs || 'none assigned'}`;
+  }).join('\n');
+
+  // Summarise contractors
+  const ctrLines = contractors.map(c => `  • ${c.name} — ${c.trade} — ${c.phone}`).join('\n');
+
+  return `${AI_SYSTEM_BASE}
+
+--- RICK'S LIVE APP DATA (as of ${timeStr}, ${dateStr}) ---
+
+ACTIVE JOBS (${jobs.length} total):
+${jobLines}
+
+ALL CONTRACTORS (${contractors.length} total):
+${ctrLines}
+
+Job statuses: "on-site" = currently active, "transit" = contractor en route, "not-started" = scheduled but not begun, "done" = completed today.
+
+Use this data to answer questions about Rick's specific jobs, contractors, schedules, and site activity. When Rick asks about "who's on site" or "what's happening today", refer to this data directly.`;
+}
+
+let aiHistory = [];
+let aiLoading = false;
+
+function aiKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aiSend(); }
+}
+
+function aiResize(el) {
+  el.style.height = '42px';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function aiChip(btn) {
+  document.getElementById('ai-input').value = btn.textContent.trim();
+  btn.parentElement.style.display = 'none';
+  aiSend();
+}
+
+async function aiSend() {
+  const input = document.getElementById('ai-input');
+  const text = input.value.trim();
+  if (!text || aiLoading) return;
+
+  // Hide welcome + chips
+  const welcome = document.getElementById('ai-welcome');
+  if (welcome) welcome.style.display = 'none';
+  document.getElementById('ai-chips').style.display = 'none';
+
+  // Add user message
+  aiHistory.push({ role: 'user', content: text });
+  appendAIMsg('user', text);
+  input.value = '';
+  input.style.height = '42px';
+
+  // Loading bubble
+  aiLoading = true;
+  const btn = document.getElementById('ai-send-btn');
+  btn.disabled = true;
+  const loadId = 'load-' + Date.now();
+  appendAIMsg('assistant loading', '…', loadId);
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': getApiKey(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildAISystem(),
+        messages: aiHistory
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'Sorry, I couldn\'t get an answer. Try again.';
+    aiHistory.push({ role: 'assistant', content: reply });
+    // Replace loading bubble
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) { loadEl.classList.remove('loading'); loadEl.innerHTML = formatAIText(reply); }
+  } catch(err) {
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) { loadEl.classList.remove('loading'); loadEl.textContent = 'Connection error — check your internet and try again.'; }
+  }
+
+  aiLoading = false;
+  btn.disabled = false;
+  scrollAIToBottom();
+}
+
+function appendAIMsg(cls, text, id) {
+  const msgs = document.getElementById('ai-messages');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + cls;
+  if (id) div.id = id;
+  div.innerHTML = cls.includes('user') ? escapeHtml(text) : (cls.includes('loading') ? text : formatAIText(text));
+  msgs.appendChild(div);
+  scrollAIToBottom();
+}
+
+function formatAIText(text) {
+  // Basic markdown-lite formatting
+  return escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^• /gm, '&#8226; ')
+    .replace(/^- /gm, '&#8226; ')
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function scrollAIToBottom() {
+  const msgs = document.getElementById('ai-messages');
+  setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+}
+
+// ══ INIT ══
+const dlEl=document.getElementById('br-deadline');
+if(dlEl){const d=new Date();d.setDate(d.getDate()+7);dlEl.value=d.toISOString().split('T')[0];}
+</script>
+</body>
+</html>
