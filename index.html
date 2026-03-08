@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rick's Landscaping — iTabs Business Hub</title>
+<title>Trim & Brick — Business Hub</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <style>
 :root {
-  --earth: #1E2A14;
-  --forest: #2C3A1E;
+  --earth: #1A1A0F;
+  --forest: #252515;
   --moss: #4A6741;
   --sage: #7A9E6F;
-  --bright: #7DC44E;
+  --bright: #96BF2A;
   --cream: #F4EFE6;
   --warm: #E6DDC8;
-  --gold: #C8A855;
+  --gold: #96BF2A;
   --ink: #0F1A08;
   --muted: #6A8A5A;
-  --border: rgba(74,103,65,0.18);
+  --border: rgba(150,191,42,0.18);
   --surface: #fff;
-  --on-site: #7DC44E;
+  --on-site: #96BF2A;
   --transit: #E8A030;
-  --not-started: #C8A855;
+  --not-started: #96BF2A;
   --done: #4A8FB5;
-  --red: #D05A3A;
+  --red: #8B2E1E;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
@@ -39,7 +39,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);h
   justify-content:space-between;
   padding:0 20px;
   flex-shrink:0;
-  border-bottom:2px solid var(--gold);
+  border-bottom:2px solid var(--gold);background:linear-gradient(135deg, #1A1A0F 60%, #2A1A12 80%, #1A1520 100%);
   z-index:200;
 }
 .app-logo{
@@ -534,7 +534,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);h
 <div class="app-bar">
   <div class="app-logo">
     <div class="logo-pulse"></div>
-    Rick's Landscaping
+    Trim & Brick
   </div>
   <div style="display:flex;align-items:center;gap:10px;">
     <div class="ai-header-btn" id="ai-header-btn" onclick="toggleAIDrawer()" title="Ask Trade Assistant">
@@ -582,7 +582,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);h
   <!-- ══ HOME ══ -->
   <div class="page active" id="page-home">
     <div class="home-hero">
-      <h2>Rick's<br><em>Business Hub</em></h2>
+      <h2>Trim &amp; Brick<br><em>Business Hub</em></h2>
       <p>All your tools in one place — powered by iTabs</p>
       <div class="stats-row">
         <div class="stat-tile">
@@ -812,6 +812,14 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);h
       </div>
 
       <div class="card">
+        <div class="card-title">📝 Job Scope Notes</div>
+        <div class="field">
+          <label>Describe the job — materials, sizes, quantities, anything specific</label>
+          <textarea id="br-notes" rows="5" style="width:100%;background:var(--cream);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);resize:vertical;line-height:1.5;" placeholder="e.g. Exposed agg driveway ~110sqm Holcim Mont Blanc, FXLuminaire Luxor 18 fixtures ZDC coded, limestone retaining wall front boundary 17m double high Remastone, soft leaf buffalo 170sqm, Colorbond fence 40m Woodland Grey, 8-station WiFi retic off waterbore, frameless glass pool fencing 23m with 2 gates..."></textarea>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-title">🔨 Select Trades</div>
         <div class="trade-chips" id="trade-chips">
           <div class="trade-chip on" data-trade="concreter" onclick="toggleBriefTrade(this)">🏗️ Concreter</div>
@@ -821,8 +829,13 @@ body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink);h
           <div class="trade-chip on" data-trade="fencing" onclick="toggleBriefTrade(this)">🪟 Fencing</div>
           <div class="trade-chip" data-trade="landscaper" onclick="toggleBriefTrade(this)">🌿 Landscaper</div>
           <div class="trade-chip" data-trade="plumber" onclick="toggleBriefTrade(this)">🔧 Plumber</div>
+          <div class="trade-chip" data-trade="retaining" onclick="toggleBriefTrade(this)">🧱 Retaining Wall</div>
+          <div class="trade-chip" data-trade="decking" onclick="toggleBriefTrade(this)">🪵 Decking</div>
         </div>
-        <button class="btn btn-gold" onclick="genBriefs()">Generate Briefs →</button>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <button class="btn btn-gold" onclick="genAIBriefs()" style="flex:2;">✨ AI Spec Sheets</button>
+          <button class="btn" onclick="genBriefs()" style="flex:1;background:var(--forest);color:rgba(255,255,255,.7);font-size:12px;">Quick</button>
+        </div>
       </div>
 
       <div id="briefs-output"></div>
@@ -1135,6 +1148,8 @@ const briefScopes={
   fencing:['1.8m Colorbond fencing — left boundary 25m','1.8m Colorbond fencing — right boundary 25m','1.8m Colorbond fencing — rear boundary 15m','Zincalume posts at 2.4m spacing, concrete footings','Limestone feature wall — front boundary 15m, 400mm high, brushed coping','Remote sliding driveway gate — galv steel, powder coat, motor & 2x remotes','Pedestrian gate × 1 (900mm wide)'],
   landscaper:['Rotary hoe and level lawn areas — gypsum and starter fertiliser','Supply and lay Sir Walter Buffalo turf — approx 120m²','Steel lawn edging along all borders','WA native plants (front beds) — 24 plants','Tropical screening plants (rear) — 22 plants','Feature trees × 2 (Frangipani or Jacaranda, 100L)','Premium hardwood mulch — 75mm depth'],
   plumber:['Outdoor shower — stainless mixer, chrome fittings, floor drain','Location: alfresco wall as per plan','Hose tap near pool — brass, 20mm copper supply','Connect pool solar heating to hot water circuit','Certificate of Compliance on completion'],
+  retaining:['Limestone block retaining wall — double course as per plan','Remastone blocks — standard sizing','Trench, set base material and compact, allowing for drainage','Set laser level and string top heights','Lay blocks with 20mm mortar gap spacing','Apply mortar mix 6:1:1 (brickies sand:lime:cement)','Backfill and compact behind wall on completion'],
+  decking:['Hardwood or composite decking as per specification','Treated pine subframe — joists and bearings as required','Stainless steel fixings throughout','Boards laid with 5mm gap for drainage','Perimeter fascia board','Supply and install post footings if required'],
 };
 
 // ══ NAVIGATION ══
@@ -1206,7 +1221,7 @@ function genBriefs(){
   const dlStr=dl?new Date(dl).toLocaleDateString('en-AU'):'TBC';
   const out=document.getElementById('briefs-output');
   out.innerHTML='';
-  const tradeNames={concreter:'🏗️ Concreter',pool:'🏊 Pool Builder',sparky:'⚡ Electrician',irrigation:'💧 Irrigation',fencing:'🪟 Fencing',landscaper:'🌿 Landscaper',plumber:'🔧 Plumber'};
+  const tradeNames={concreter:'🏗️ Concreter',pool:'🏊 Pool Builder',sparky:'⚡ Electrician',irrigation:'💧 Irrigation',fencing:'🪟 Fencing',landscaper:'🌿 Landscaper',plumber:'🔧 Plumber',retaining:'🧱 Retaining Wall',decking:'🪵 Decking'};
   selectedTrades.forEach(t=>{
     const scope=briefScopes[t];
     if(!scope)return;
@@ -1221,13 +1236,109 @@ function genBriefs(){
         <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">📍 ${addr} &nbsp;·&nbsp; Quote by: <strong>${dlStr}</strong></div>
         ${scope.map(s=>`<div class="scope-item">${s}</div>`).join('')}
         <div style="margin-top:12px;padding:10px;background:rgba(200,168,85,.08);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;font-size:11px;color:var(--muted);">
-          Send quote to: <strong>rick@rickslandscaping.com.au</strong> · 0400 000 000
+          Send quote to: <strong>trimandbrick@gmail.com</strong> · 0468 659 167
         </div>
       </div>`;
     out.appendChild(card);
   });
   if(!selectedTrades.length){out.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px;">Select at least one trade above.</div>';}
   out.scrollIntoView({behavior:'smooth'});
+}
+
+// ══ AI SPEC SHEETS ══
+async function genAIBriefs(){
+  const key=localStorage.getItem('rick_api_key');
+  if(!key){alert('Set up your API key in Trade Assistant first.');goTo('ai');return;}
+  if(!selectedTrades.length){alert('Select at least one trade.');return;}
+
+  const addr=document.getElementById('br-addr').value||'Site address';
+  const ref=document.getElementById('br-ref').value||'RL-2026-XXX';
+  const dl=document.getElementById('br-deadline').value;
+  const dlStr=dl?new Date(dl).toLocaleDateString('en-AU'):'TBC';
+  const notes=document.getElementById('br-notes').value.trim();
+  const out=document.getElementById('briefs-output');
+
+  const tradeNames={concreter:'🏗️ Concreter',pool:'🏊 Pool Builder',sparky:'⚡ Electrician',irrigation:'💧 Irrigation',fencing:'🪟 Fencing',landscaper:'🌿 Landscaper',plumber:'🔧 Plumber',retaining:'🧱 Retaining Wall',decking:'🪵 Decking'};
+  const tradeKeys={concreter:'CONCRETER',pool:'POOL_BUILDER',sparky:'ELECTRICIAN',irrigation:'IRRIGATION',fencing:'FENCING',landscaper:'LANDSCAPER_TURF',plumber:'PLUMBER',retaining:'RETAINING_WALL',decking:'DECKING'};
+
+  // Show loading skeletons
+  out.innerHTML='';
+  selectedTrades.forEach(t=>{
+    const card=document.createElement('div');
+    card.className='brief-card visible';
+    card.id='ai-brief-'+t;
+    card.innerHTML=`
+      <div class="brief-card-header">
+        <h3>${tradeNames[t]||t}</h3>
+        <span class="badge badge-gold">${ref}</span>
+      </div>
+      <div class="brief-card-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">📍 ${addr} &nbsp;·&nbsp; Quote by: <strong>${dlStr}</strong></div>
+        <div class="scope-item" style="color:var(--muted);font-style:italic;">⏳ Generating spec sheet…</div>
+      </div>`;
+    out.appendChild(card);
+  });
+  out.scrollIntoView({behavior:'smooth'});
+
+  const systemPrompt=`You are generating contractor spec sheets for Rick at Trim & Brick, a Perth WA landscape design and project management company. Rick designs premium residential landscaping jobs ($100k–$300k) and subcontracts all trades.
+
+Your job: generate a realistic, job-specific scope of works for a subcontractor quote request. Use the job notes provided by Rick to make each scope item specific — include actual materials, brands, dimensions, and quantities where mentioned.
+
+Rick's preferred materials/suppliers (use these when relevant and not overridden by job notes):
+- Concrete: Holcim Mont Blanc White or Limecrete Coral exposed aggregate, 100mm slab, SL62 mesh
+- Lighting: FXLuminaire Luxor ZDC coded system
+- Limestone: Remastone blocks, double course, 6:1:1 mortar mix
+- Turf: Soft Leaf Buffalo (Palmetto) or Premium Palmetto
+- Fencing: Colorbond Woodland/Monument Grey, 1.8m
+- Reticulation: Hunter or Rain Bird heads, WiFi controller, bore pump relay
+- Pavers: Freo Stone Porcelain Granito or Remastone Rockford where specified
+
+Output format — return ONLY a JSON object with this structure (no markdown, no preamble):
+{
+  "TRADE_KEY": ["scope item 1", "scope item 2", ...],
+  "TRADE_KEY2": [...]
+}
+
+Each trade gets 6–9 specific scope items. Items should be concise but specific — include quantities, materials, specs. End each trade's list with a certification/compliance item where relevant.`;
+
+  const userMsg=`Job: ${addr} | Ref: ${ref} | Quote by: ${dlStr}
+Job scope notes: ${notes||'General Perth residential landscaping job — use typical scope for each trade'}
+Trades needed: ${selectedTrades.map(t=>tradeKeys[t]).join(', ')}
+
+Generate spec sheet items for each trade listed above.`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:2000,system:systemPrompt,messages:[{role:'user',content:userMsg}]})
+    });
+    const data=await resp.json();
+    const text=data.content?.[0]?.text||'{}';
+    const clean=text.replace(/```json|```/g,'').trim();
+    let parsed={};
+    try{parsed=JSON.parse(clean);}catch(e){console.error('Parse error',e,clean);}
+
+    selectedTrades.forEach(t=>{
+      const key2=tradeKeys[t];
+      const items=parsed[key2]||[];
+      const card=document.getElementById('ai-brief-'+t);
+      if(!card)return;
+      const body=card.querySelector('.brief-card-body');
+      if(items.length){
+        body.innerHTML=`
+          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">📍 ${addr} &nbsp;·&nbsp; Quote by: <strong>${dlStr}</strong></div>
+          ${items.map(s=>`<div class="scope-item">${s}</div>`).join('')}
+          <div style="margin-top:12px;padding:10px;background:rgba(200,168,85,.08);border-left:3px solid var(--gold);border-radius:0 4px 4px 0;font-size:11px;color:var(--muted);">
+            Send quote to: <strong>trimandbrick@gmail.com</strong> · Rick: 0468 659 167
+          </div>`;
+      } else {
+        body.innerHTML=`<div class="scope-item" style="color:var(--red);">Could not generate — check job notes and try again.</div>`;
+      }
+    });
+  }catch(err){
+    out.innerHTML=`<div style="padding:20px;color:var(--red);font-size:13px;">Error: ${err.message}</div>`;
+  }
 }
 
 // ══ TRACKER ══
